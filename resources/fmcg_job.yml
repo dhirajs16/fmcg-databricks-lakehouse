@@ -1,0 +1,51 @@
+resources:
+  jobs:
+    fmcg_acquisition_pipeline:
+      name: fmcg-acquisition-pipeline-${bundle.target}
+      max_concurrent_runs: 1
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: landing_volume
+          default: ${var.landing_volume}
+      tasks:
+        - task_key: setup
+          notebook_task:
+            notebook_path: ../notebooks/00_setup.py
+            base_parameters:
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+              landing_volume: "{{job.parameters.landing_volume}}"
+        - task_key: bronze
+          depends_on: [{task_key: setup}]
+          notebook_task:
+            notebook_path: ../notebooks/01_bronze_ingestion.py
+            base_parameters:
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+              landing_volume: "{{job.parameters.landing_volume}}"
+        - task_key: silver_dimensions
+          depends_on: [{task_key: bronze}]
+          notebook_task:
+            notebook_path: ../notebooks/02_silver_dimensions.py
+            base_parameters:
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+        - task_key: silver_orders
+          depends_on: [{task_key: silver_dimensions}]
+          notebook_task:
+            notebook_path: ../notebooks/03_silver_orders.py
+            base_parameters:
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+        - task_key: gold
+          depends_on: [{task_key: silver_orders}]
+          notebook_task:
+            notebook_path: ../notebooks/04_gold_sales_mart.py
+            base_parameters:
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+      queue:
+        enabled: true
