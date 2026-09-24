@@ -1,0 +1,12 @@
+.databricks/
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.env
+dist/
+build/
+data/generated/
+docs/screenshots/*.png
+!docs/screenshots/.gitkeep
+.github
